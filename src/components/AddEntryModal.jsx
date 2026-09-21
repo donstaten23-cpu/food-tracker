@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { supabase, estimateFood } from '../lib/supabaseClient'
+import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { round, todayIso } from '../lib/nutrition'
 
@@ -7,20 +7,16 @@ const EMPTY_EXACT = { name: '', brand: '', quantity: 1, unit: 'serving', calorie
 
 export default function AddEntryModal({ mealType, onClose, onLogged }) {
   const { user, household } = useAuth()
-  const [tab, setTab] = useState('describe')
+  const [tab, setTab] = useState('quick')
 
-  // --- describe tab ---
-  const [description, setDescription] = useState('')
-  const [estimate, setEstimate] = useState(null)
-  const [estimating, setEstimating] = useState(false)
-  const [estimateError, setEstimateError] = useState('')
-
-  // --- exact tab ---
+  // --- new food tab ---
   const [exact, setExact] = useState(EMPTY_EXACT)
 
   // --- quick add tab ---
   const [favorites, setFavorites] = useState([])
   const [favoritesLoading, setFavoritesLoading] = useState(false)
+  const [search, setSearch] = useState('')
+  const [quantities, setQuantities] = useState({}) // food.id -> quantity typed in
 
   const [saving, setSaving] = useState(false)
 
@@ -31,32 +27,25 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
       .from('foods')
       .select('*')
       .eq('household_id', household.id)
-      .order('created_at', { ascending: false })
-      .limit(30)
+      .order('last_used_at', { ascending: false })
+      .limit(100)
       .then(({ data }) => {
         setFavorites(data || [])
         setFavoritesLoading(false)
       })
   }, [tab, household.id])
 
-  async function handleEstimate() {
-    if (!description.trim()) return
-    setEstimating(true)
-    setEstimateError('')
-    setEstimate(null)
-    try {
-      const result = await estimateFood(description.trim())
-      setEstimate(result)
-    } catch (e) {
-      setEstimateError(e.message)
-    } finally {
-      setEstimating(false)
-    }
-  }
+  const filteredFavorites = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return favorites
+    return favorites.filter(
+      (f) => f.name.toLowerCase().includes(q) || (f.brand || '').toLowerCase().includes(q)
+    )
+  }, [favorites, search])
 
   // Inserts one foods row (catalog, so it can be quick-added later) plus one
   // food_entries row per item, all sharing the same meal/date.
-  async function saveItems(items, source) {
+  async function saveItems(items) {
     setSaving(true)
     try {
       for (const item of items) {
@@ -73,7 +62,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
             protein_g: item.protein_g,
             carbs_g: item.carbs_g,
             fat_g: item.fat_g,
-            source,
+            source: 'exact',
           })
           .select()
           .single()
@@ -92,7 +81,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
           protein_g: item.protein_g,
           carbs_g: item.carbs_g,
           fat_g: item.fat_g,
-          source,
+          source: 'exact',
         })
         if (entryErr) throw entryErr
       }
@@ -102,44 +91,46 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
     }
   }
 
-  async function handleSaveEstimate() {
-    if (!estimate) return
-    await saveItems(estimate.items, 'estimated')
-  }
-
   async function handleSaveExact(e) {
     e.preventDefault()
-    await saveItems(
-      [
-        {
-          name: exact.name,
-          quantity: Number(exact.quantity) || 1,
-          unit: exact.unit,
-          calories: Number(exact.calories) || 0,
-          protein_g: Number(exact.protein_g) || 0,
-          carbs_g: Number(exact.carbs_g) || 0,
-          fat_g: Number(exact.fat_g) || 0,
-        },
-      ],
-      'exact'
-    )
+    await saveItems([
+      {
+        name: exact.name,
+        quantity: Number(exact.quantity) || 1,
+        unit: exact.unit,
+        calories: Number(exact.calories) || 0,
+        protein_g: Number(exact.protein_g) || 0,
+        carbs_g: Number(exact.carbs_g) || 0,
+        fat_g: Number(exact.fat_g) || 0,
+      },
+    ])
   }
 
+  // Logs a preset food, scaling its stored macros if the user changed the
+  // quantity (e.g. "usually 1 banana" but logging 2 today).
   async function handleQuickAdd(food) {
-    await saveItems(
-      [
+    const qty = Number(quantities[food.id] ?? food.serving_qty) || food.serving_qty
+    const ratio = qty / (food.serving_qty || 1)
+
+    setSaving(true)
+    try {
+      await saveItems([
         {
           name: food.name,
-          quantity: food.serving_qty,
+          quantity: qty,
           unit: food.serving_unit,
-          calories: food.calories,
-          protein_g: food.protein_g,
-          carbs_g: food.carbs_g,
-          fat_g: food.fat_g,
+          calories: food.calories * ratio,
+          protein_g: food.protein_g * ratio,
+          carbs_g: food.carbs_g * ratio,
+          fat_g: food.fat_g * ratio,
         },
-      ],
-      food.source
-    )
+      ])
+      // Bumps it to the top of Quick add next time. Best-effort — a couple
+      // of these racing between household members is harmless.
+      await supabase.from('foods').update({ last_used_at: new Date().toISOString() }).eq('id', food.id)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -153,74 +144,57 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
         </div>
 
         <div className="tabs">
-          <button className={tab === 'describe' ? 'active' : ''} onClick={() => setTab('describe')}>
-            Describe it
-          </button>
           <button className={tab === 'quick' ? 'active' : ''} onClick={() => setTab('quick')}>
             Quick add
           </button>
           <button className={tab === 'exact' ? 'active' : ''} onClick={() => setTab('exact')}>
-            Exact entry
+            New food
           </button>
         </div>
 
-        {tab === 'describe' && (
-          <div className="tab-panel">
-            <textarea
-              rows={3}
-              placeholder="e.g. two scrambled eggs and a slice of buttered toast"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-            <button onClick={handleEstimate} disabled={estimating || !description.trim()}>
-              {estimating ? 'Estimating…' : 'Estimate'}
-            </button>
-            {estimateError && <p className="error">{estimateError}</p>}
-
-            {estimate && (
-              <div className="estimate-preview">
-                {estimate.items.map((item, i) => (
-                  <div className="estimate-item" key={i}>
-                    <span>
-                      {item.quantity} {item.unit} {item.name}
-                    </span>
-                    <span className="muted">{round(item.calories)} cal</span>
-                  </div>
-                ))}
-                <div className="estimate-total">
-                  <span>Total</span>
-                  <span>
-                    {round(estimate.total.calories)} cal · P {round(estimate.total.protein_g)}g · C{' '}
-                    {round(estimate.total.carbs_g)}g · F {round(estimate.total.fat_g)}g
-                  </span>
-                </div>
-                {estimate.notes && <p className="muted small">{estimate.notes}</p>}
-                <button onClick={handleSaveEstimate} disabled={saving}>
-                  {saving ? 'Saving…' : `Log to ${mealType}`}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
         {tab === 'quick' && (
           <div className="tab-panel">
+            {favorites.length > 0 && (
+              <input
+                placeholder="Search your foods…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            )}
             {favoritesLoading && <p className="muted">Loading…</p>}
             {!favoritesLoading && favorites.length === 0 && (
-              <p className="muted">Nothing logged yet — items you log show up here for quick re-adding.</p>
+              <p className="muted">
+                Nothing preset yet — add something under "New food" and it'll show up here for
+                one-tap logging every time after.
+              </p>
+            )}
+            {!favoritesLoading && favorites.length > 0 && filteredFavorites.length === 0 && (
+              <p className="muted">No match — add it under "New food".</p>
             )}
             <div className="favorites-list">
-              {favorites.map((food) => (
-                <button key={food.id} className="favorite-row" onClick={() => handleQuickAdd(food)} disabled={saving}>
-                  <span>
-                    {food.name}
-                    <span className="muted small">
-                      {' '}
-                      · {food.serving_qty} {food.serving_unit}
+              {filteredFavorites.map((food) => (
+                <div key={food.id} className="favorite-row">
+                  <div className="favorite-info">
+                    <span>
+                      {food.name}
+                      {food.brand ? <span className="muted small"> ({food.brand})</span> : null}
                     </span>
-                  </span>
-                  <span className="muted">{round(food.calories)} cal</span>
-                </button>
+                    <span className="muted small">
+                      {round(food.calories)} cal per {food.serving_qty} {food.serving_unit}
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    step="any"
+                    className="favorite-qty"
+                    value={quantities[food.id] ?? food.serving_qty}
+                    onChange={(e) => setQuantities({ ...quantities, [food.id]: e.target.value })}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <button onClick={() => handleQuickAdd(food)} disabled={saving}>
+                    Log
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -228,6 +202,10 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
 
         {tab === 'exact' && (
           <form className="tab-panel" onSubmit={handleSaveExact}>
+            <p className="muted small">
+              Enter the numbers once (from a label, a recipe, or wherever you look it up) — it's
+              saved to Quick add for every time after.
+            </p>
             <label>
               Name
               <input value={exact.name} onChange={(e) => setExact({ ...exact, name: e.target.value })} required />

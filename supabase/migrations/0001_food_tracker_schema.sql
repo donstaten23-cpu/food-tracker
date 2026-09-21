@@ -66,24 +66,29 @@ create policy "household_members_select_own_household" on household_members
 
 -- ---------------------------------------------------------------------------
 -- foods
--- Reusable catalog, shared within a household. Populated both from LLM
--- estimates (source = 'estimated') and from exact/label entries
--- (source = 'exact'), so past entries can be quickly re-logged.
+-- Reusable catalog, shared within a household. There's no estimation
+-- service behind this app — every row here was typed in by hand once (see
+-- `food_entries` below) and can be quick-added from then on.
+--
+-- `last_used_at` drives the "Quick add" list ordering in the app: entering a
+-- food's numbers once via "New food" populates this catalog, and re-logging
+-- the same thing later is a one-tap quick-add.
 -- ---------------------------------------------------------------------------
 create table if not exists foods (
-  id           uuid primary key default gen_random_uuid(),
-  household_id uuid not null references households(id) on delete cascade,
-  created_by   uuid not null references auth.users(id) on delete cascade,
-  name         text not null,
-  brand        text,
-  serving_qty  numeric not null default 1,
-  serving_unit text not null default 'serving',
-  calories     numeric not null,
-  protein_g    numeric not null default 0,
-  carbs_g      numeric not null default 0,
-  fat_g        numeric not null default 0,
-  source       text not null default 'estimated' check (source in ('estimated', 'exact')),
-  created_at   timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  household_id  uuid not null references households(id) on delete cascade,
+  created_by    uuid not null references auth.users(id) on delete cascade,
+  name          text not null,
+  brand         text,
+  serving_qty   numeric not null default 1,
+  serving_unit  text not null default 'serving',
+  calories      numeric not null,
+  protein_g     numeric not null default 0,
+  carbs_g       numeric not null default 0,
+  fat_g         numeric not null default 0,
+  source        text not null default 'exact' check (source in ('exact')),
+  created_at    timestamptz not null default now(),
+  last_used_at  timestamptz not null default now()
 );
 
 alter table foods enable row level security;
@@ -123,7 +128,7 @@ create table if not exists food_entries (
   protein_g    numeric not null default 0,
   carbs_g      numeric not null default 0,
   fat_g        numeric not null default 0,
-  source       text not null default 'estimated' check (source in ('estimated', 'exact')),
+  source       text not null default 'exact' check (source in ('exact')),
   created_at   timestamptz not null default now()
 );
 
