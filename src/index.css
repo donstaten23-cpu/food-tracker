@@ -1,13 +1,23 @@
 :root {
-  --bg: #12151a;
-  --bg-card: #1b2027;
-  --border: #1e2530;
-  --border-2: #2a313a;
-  --accent: #e83b3b;
-  --text-1: #edeae3;
-  --text-2: #8a919c;
-  --text-3: #5a6168;
-  --radius: 14px;
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #fafafa;
+  --border: #eef0f2;
+  --border-2: #e0e3e8;
+  --text-1: #1a1c20;
+  --text-2: #6b7280;
+  --text-3: #a3a9b3;
+
+  /* Orange is the one accent: the calorie ring, macro bars, chart bars. */
+  --accent: #f97316;
+  /* Slightly deeper orange for buttons / text on white, for contrast. */
+  --accent-strong: #ea580c;
+  --danger: #d92d20;
+
+  --radius: 18px;
+  --shadow: 0 2px 14px rgba(16, 24, 40, 0.06);
 }
 
 * {
@@ -42,7 +52,7 @@ h3 {
 }
 
 .error {
-  color: var(--accent);
+  color: var(--danger);
   font-size: 0.9em;
 }
 
@@ -61,14 +71,14 @@ h3 {
   align-items: center;
   gap: 24px;
   padding: 14px 20px;
-  background: var(--bg-card);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
 .nav-brand {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .nav-bar nav {
@@ -122,9 +132,9 @@ label {
 
 input,
 textarea {
-  background: var(--bg);
+  background: var(--bg-input);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text-1);
   padding: 9px 10px;
   font-size: 1em;
@@ -133,14 +143,16 @@ textarea {
 
 input:focus,
 textarea:focus {
-  outline: 1px solid var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: #fff;
 }
 
 button {
-  background: var(--accent);
+  background: var(--accent-strong);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 16px;
   font-size: 0.95em;
   font-weight: 600;
@@ -194,6 +206,7 @@ button:disabled {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 28px;
   width: 100%;
   max-width: 360px;
@@ -203,7 +216,7 @@ button:disabled {
 }
 
 .auth-card h1 {
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .divider {
@@ -213,44 +226,110 @@ button:disabled {
   font-size: 0.85em;
 }
 
-/* --- target bars --- */
+/* --- calorie ring + macros --- */
 
-.target-bars {
+.calorie-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 22px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
+  box-shadow: var(--shadow);
+  padding: 24px 16px 20px;
 }
 
-.target-bar-label {
+.calorie-ring {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+.calorie-ring svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ring-track,
+.ring-progress {
+  fill: none;
+  stroke-width: 16;
+}
+
+.ring-track {
+  stroke: #f3f4f6;
+}
+
+.ring-progress {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.ring-center {
+  position: absolute;
+  inset: 0;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.ring-value {
+  font-size: 2.6em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ring-label {
+  color: var(--text-2);
+  font-size: 0.9em;
+}
+
+.ring-sub {
+  color: var(--text-3);
+  font-size: 0.75em;
+  margin-top: 4px;
+}
+
+.macro-row {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.macro {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.macro-label {
   font-size: 0.85em;
-  margin-bottom: 4px;
+  color: var(--text-2);
 }
 
-.target-bar-label .over {
-  color: var(--accent);
-}
-
-.target-bar-track {
-  height: 8px;
-  background: var(--border);
-  border-radius: 4px;
+.macro-track {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 3px;
   overflow: hidden;
 }
 
-.target-bar-fill {
+.macro-fill {
   height: 100%;
   background: var(--accent);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
-.target-bar-fill.over {
-  background: #ff7676;
+.macro-value {
+  font-size: 0.8em;
+  color: var(--text-1);
 }
 
 .household-strip {
@@ -271,6 +350,7 @@ button:disabled {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 16px;
 }
 
@@ -321,12 +401,17 @@ button:disabled {
   font-weight: 500;
 }
 
+.add-entry-button:hover {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+}
+
 /* --- modal --- */
 
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(16, 24, 40, 0.4);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -335,8 +420,8 @@ button:disabled {
 
 .modal {
   background: var(--bg-card);
-  border: 1px solid var(--border-2);
-  border-radius: 16px 16px 0 0;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 30px rgba(16, 24, 40, 0.15);
   width: 100%;
   max-width: 480px;
   max-height: 85vh;
@@ -349,7 +434,7 @@ button:disabled {
     align-items: center;
   }
   .modal {
-    border-radius: 16px;
+    border-radius: 20px;
   }
 }
 
@@ -386,30 +471,6 @@ button:disabled {
   gap: 10px;
 }
 
-.estimate-preview {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.estimate-item,
-.estimate-total {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9em;
-}
-
-.estimate-total {
-  font-weight: 600;
-  border-top: 1px solid var(--border);
-  padding-top: 6px;
-  margin-top: 4px;
-}
-
 .favorites-list {
   display: flex;
   flex-direction: column;
@@ -419,9 +480,9 @@ button:disabled {
 }
 
 .favorite-row {
-  background: var(--bg);
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--text-1);
   display: flex;
   align-items: center;
@@ -454,6 +515,7 @@ button:disabled {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 12px;
 }
 
@@ -483,6 +545,7 @@ button:disabled {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: 16px;
 }
 
@@ -493,12 +556,12 @@ button:disabled {
 
 .invite-code {
   display: inline-block;
-  background: var(--bg);
+  background: var(--bg-input);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 8px 14px;
   font-size: 1.2em;
   letter-spacing: 2px;
-  color: var(--accent);
+  color: var(--accent-strong);
   margin-top: 8px;
 }
