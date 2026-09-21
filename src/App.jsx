@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
@@ -15,8 +15,10 @@ function Gate() {
   if (household === undefined) return <div className="loading-screen">Loading…</div>
   if (!household) return <Onboarding />
 
+  // HashRouter (URLs like /#/history) because GitHub Pages has no server-side
+  // fallback: refreshing on a BrowserRouter path like /history would 404.
   return (
-    <BrowserRouter>
+    <HashRouter>
       <NavBar />
       <main className="app-main">
         <Routes>
@@ -25,7 +27,7 @@ function Gate() {
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </main>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
