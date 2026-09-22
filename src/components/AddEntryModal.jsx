@@ -19,6 +19,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
   const [quantities, setQuantities] = useState({}) // food.id -> quantity typed in
 
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (tab !== 'quick') return
@@ -44,78 +45,89 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
     )
   }, [favorites, search])
 
-  // Inserts one foods row (catalog, so it can be quick-added later) plus one
-  // food_entries row per item, all sharing the same meal/date.
-  async function saveItems(items) {
-    setSaving(true)
-    try {
-      for (const item of items) {
-        const { data: food, error: foodErr } = await supabase
-          .from('foods')
-          .insert({
-            household_id: household.id,
-            created_by: user.id,
-            name: item.name,
-            brand: item.brand || null,
-            serving_qty: item.quantity,
-            serving_unit: item.unit,
-            calories: item.calories,
-            protein_g: item.protein_g,
-            carbs_g: item.carbs_g,
-            fat_g: item.fat_g,
-            source: 'exact',
-          })
-          .select()
-          .single()
-        if (foodErr) throw foodErr
+  // Writes one food_entries row (the log line for today). Macros are copied
+  // in so later edits to a preset never rewrite history.
+  async function logEntry(item, foodId) {
+    const { error: entryErr } = await supabase.from('food_entries').insert({
+      household_id: household.id,
+      user_id: user.id,
+      food_id: foodId,
+      logged_date: todayIso(),
+      meal_type: mealType,
+      description: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      calories: item.calories,
+      protein_g: item.protein_g,
+      carbs_g: item.carbs_g,
+      fat_g: item.fat_g,
+      source: 'exact',
+    })
+    if (entryErr) throw entryErr
+  }
 
-        const { error: entryErr } = await supabase.from('food_entries').insert({
+  // Runs a save, shows any failure in the modal instead of swallowing it, and
+  // closes the modal only on success.
+  async function run(action) {
+    setSaving(true)
+    setError('')
+    try {
+      await action()
+      onLogged()
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Nothing was saved.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // "New food": adds the preset to the catalog AND logs it once. Only this
+  // path creates catalog rows — Quick add reuses the existing one.
+  function saveNewFood(item) {
+    return run(async () => {
+      const { data: food, error: foodErr } = await supabase
+        .from('foods')
+        .insert({
           household_id: household.id,
-          user_id: user.id,
-          food_id: food.id,
-          logged_date: todayIso(),
-          meal_type: mealType,
-          description: item.name,
-          quantity: item.quantity,
-          unit: item.unit,
+          created_by: user.id,
+          name: item.name,
+          brand: item.brand || null,
+          serving_qty: item.quantity,
+          serving_unit: item.unit,
           calories: item.calories,
           protein_g: item.protein_g,
           carbs_g: item.carbs_g,
           fat_g: item.fat_g,
           source: 'exact',
         })
-        if (entryErr) throw entryErr
-      }
-      onLogged()
-    } finally {
-      setSaving(false)
-    }
+        .select()
+        .single()
+      if (foodErr) throw foodErr
+      await logEntry(item, food.id)
+    })
   }
 
-  async function handleSaveExact(e) {
+  function handleSaveExact(e) {
     e.preventDefault()
-    await saveItems([
-      {
-        name: exact.name,
-        quantity: Number(exact.quantity) || 1,
-        unit: exact.unit,
-        calories: Number(exact.calories) || 0,
-        protein_g: Number(exact.protein_g) || 0,
-        carbs_g: Number(exact.carbs_g) || 0,
-        fat_g: Number(exact.fat_g) || 0,
-      },
-    ])
+    return saveNewFood({
+      name: exact.name.trim(),
+      quantity: Number(exact.quantity) || 1,
+      unit: exact.unit,
+      calories: Number(exact.calories) || 0,
+      protein_g: Number(exact.protein_g) || 0,
+      carbs_g: Number(exact.carbs_g) || 0,
+      fat_g: Number(exact.fat_g) || 0,
+    })
   }
 
   // Logs a preset food, scaling its stored macros if the user changed the
   // quantity (e.g. "usually 1 banana" but logging 2 today).
-  async function handleQuickAdd(food) {
+  function handleQuickAdd(food) {
     const qty = Number(quantities[food.id] ?? food.serving_qty) || food.serving_qty
     const ratio = qty / (food.serving_qty || 1)
 
-    setSaving(true)
-    try {
-      await saveItems([
+    return run(async () => {
+      await logEntry(
         {
           name: food.name,
           quantity: qty,
@@ -125,13 +137,12 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
           carbs_g: food.carbs_g * ratio,
           fat_g: food.fat_g * ratio,
         },
-      ])
-      // Bumps it to the top of Quick add next time. Best-effort — a couple
-      // of these racing between household members is harmless.
+        food.id
+      )
+      // Bumps it to the top of Quick add next time. Best-effort: the entry is
+      // already saved, so a failure here is deliberately not surfaced.
       await supabase.from('foods').update({ last_used_at: new Date().toISOString() }).eq('id', food.id)
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   return (
@@ -152,6 +163,8 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
             New food
           </button>
         </div>
+
+        {error && <p className="error">{error}</p>}
 
         {tab === 'quick' && (
           <div className="tab-panel">
