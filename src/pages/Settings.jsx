@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import ImportFoods from '../components/ImportFoods'
 
 export default function Settings() {
   const { user, household } = useAuth()
@@ -81,6 +82,8 @@ export default function Settings() {
           {saved && <span className="muted small">Saved.</span>}
         </form>
       </section>
+
+      <ImportFoods />
 
       <section className="settings-section">
         <h2>Household</h2>

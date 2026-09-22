@@ -554,6 +554,40 @@ button:disabled {
   flex-direction: column;
 }
 
+.settings-section a {
+  color: var(--accent-strong);
+}
+
+.import-preview {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-preview p {
+  margin: 0;
+}
+
+.import-list,
+.import-errors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.import-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
 .invite-code {
   display: inline-block;
   background: var(--bg-input);

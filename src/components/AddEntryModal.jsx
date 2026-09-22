@@ -28,7 +28,8 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
       .select('*')
       .eq('household_id', household.id)
       .order('last_used_at', { ascending: false })
-      .limit(100)
+      .order('name', { ascending: true })
+      .limit(1000)
       .then(({ data }) => {
         setFavorites(data || [])
         setFavoritesLoading(false)
@@ -165,7 +166,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
             {!favoritesLoading && favorites.length === 0 && (
               <p className="muted">
                 Nothing preset yet — add something under "New food" and it'll show up here for
-                one-tap logging every time after.
+                one-tap logging every time after. Have a list already? Import a CSV in Settings.
               </p>
             )}
             {!favoritesLoading && favorites.length > 0 && filteredFavorites.length === 0 && (
