@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ResponsiveContainer,
   BarChart,
@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { round, netCarbs } from '../lib/nutrition'
+import { round, netCarbs, todayIso } from '../lib/nutrition'
 
 const RANGE_DAYS = 14
 
@@ -23,16 +23,17 @@ function daysAgoIso(n) {
 }
 
 export default function History() {
-  const { user } = useAuth()
+  const { user, household } = useAuth()
   const [rows, setRows] = useState([])
   const [target, setTarget] = useState(null)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
+  const [repeated, setRepeated] = useState(null) // id of the entry just repeated
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     const from = daysAgoIso(RANGE_DAYS - 1)
     setLoading(true)
-    Promise.all([
+    const [entriesRes, targetRes] = await Promise.all([
       supabase
         .from('food_entries')
         .select('*')
@@ -40,12 +41,39 @@ export default function History() {
         .gte('logged_date', from)
         .order('logged_date', { ascending: true }),
       supabase.from('daily_targets').select('*').eq('user_id', user.id).maybeSingle(),
-    ]).then(([entriesRes, targetRes]) => {
-      setRows(entriesRes.data || [])
-      setTarget(targetRes.data)
-      setLoading(false)
-    })
+    ])
+    setRows(entriesRes.data || [])
+    setTarget(targetRes.data)
+    setLoading(false)
   }, [user.id])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // Re-logs a past entry onto today, same meal, same numbers.
+  async function repeatEntry(entry) {
+    const { error } = await supabase.from('food_entries').insert({
+      household_id: household.id,
+      user_id: user.id,
+      food_id: entry.food_id,
+      recipe_id: entry.recipe_id,
+      logged_date: todayIso(),
+      meal_type: entry.meal_type,
+      description: entry.description,
+      quantity: entry.quantity,
+      unit: entry.unit,
+      calories: entry.calories,
+      protein_g: entry.protein_g,
+      carbs_g: entry.carbs_g,
+      fat_g: entry.fat_g,
+      fiber_g: entry.fiber_g,
+      source: entry.source,
+    })
+    if (error) return window.alert(error.message)
+    setRepeated(entry.id)
+    load()
+  }
 
   const byDay = useMemo(() => {
     const map = new Map()
@@ -116,7 +144,20 @@ export default function History() {
                       <span>
                         [{e.meal_type}] {e.quantity} {e.unit} {e.description}
                       </span>
-                      <span className="muted">{round(e.calories)} cal</span>
+                      <span className="entry-right">
+                        <span className="muted">{round(e.calories)} cal</span>
+                        {day.date === todayIso() ? null : repeated === e.id ? (
+                          <span className="muted small">Added to today</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="secondary small"
+                            onClick={() => repeatEntry(e)}
+                          >
+                            Repeat
+                          </button>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>

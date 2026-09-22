@@ -9,17 +9,23 @@ export const MEAL_LABELS = {
   snack: 'Snacks',
 }
 
+const MACRO_KEYS = ['calories', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g']
+
+export function sumMacros(items) {
+  return items.reduce((acc, item) => {
+    for (const key of MACRO_KEYS) acc[key] += Number(item[key] || 0)
+    return acc
+  }, Object.fromEntries(MACRO_KEYS.map((k) => [k, 0])))
+}
+
 export function sumTotals(entries) {
-  return entries.reduce(
-    (acc, e) => ({
-      calories: acc.calories + Number(e.calories || 0),
-      protein_g: acc.protein_g + Number(e.protein_g || 0),
-      carbs_g: acc.carbs_g + Number(e.carbs_g || 0),
-      fat_g: acc.fat_g + Number(e.fat_g || 0),
-      fiber_g: acc.fiber_g + Number(e.fiber_g || 0),
-    }),
-    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 }
-  )
+  return sumMacros(entries)
+}
+
+// Scales a per-serving macro object (a food, or a recipe's per-serving
+// totals) by a ratio — e.g. quantity logged / serving_qty.
+export function scaleMacros(macros, ratio) {
+  return Object.fromEntries(MACRO_KEYS.map((k) => [k, Number(macros[k] || 0) * ratio]))
 }
 
 // Net carbs = total carbs minus fiber, the number apps like Cronometer show

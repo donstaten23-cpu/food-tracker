@@ -194,6 +194,11 @@ button:disabled {
   cursor: default;
 }
 
+button.small {
+  padding: 5px 10px;
+  font-size: 0.8em;
+}
+
 .link-button {
   background: none;
   color: var(--text-2);
@@ -589,6 +594,12 @@ button.danger {
   justify-content: space-between;
   font-weight: 400;
   text-align: left;
+}
+
+li.day-row {
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 10px;
 }
 
 /* --- settings --- */

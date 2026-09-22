@@ -12,7 +12,9 @@ export default function NavBar() {
           Today
         </NavLink>
         <NavLink to="/foods">Foods</NavLink>
+        <NavLink to="/recipes">Recipes</NavLink>
         <NavLink to="/history">History</NavLink>
+        <NavLink to="/weight">Weight</NavLink>
         <NavLink to="/settings">Settings</NavLink>
       </nav>
       <div className="nav-right">

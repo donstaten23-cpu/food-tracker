@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { round } from '../lib/nutrition'
+import { round, scaleMacros, sumMacros } from '../lib/nutrition'
 
 const EMPTY_EXACT = {
   name: '',
@@ -28,6 +28,12 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
   const [search, setSearch] = useState('')
   const [quantities, setQuantities] = useState({}) // food.id -> quantity typed in
 
+  // --- recipes tab ---
+  const [recipes, setRecipes] = useState([])
+  const [recipesLoading, setRecipesLoading] = useState(false)
+  const [recipeSearch, setRecipeSearch] = useState('')
+  const [recipeServings, setRecipeServings] = useState({}) // recipe.id -> servings typed in
+
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -47,6 +53,21 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
       })
   }, [tab, household.id])
 
+  useEffect(() => {
+    if (tab !== 'recipes') return
+    setRecipesLoading(true)
+    supabase
+      .from('recipes')
+      .select('*, recipe_ingredients(*)')
+      .eq('household_id', household.id)
+      .order('last_used_at', { ascending: false })
+      .order('name', { ascending: true })
+      .then(({ data }) => {
+        setRecipes(data || [])
+        setRecipesLoading(false)
+      })
+  }, [tab, household.id])
+
   const filteredFavorites = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return favorites
@@ -54,6 +75,12 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
       (f) => f.name.toLowerCase().includes(q) || (f.brand || '').toLowerCase().includes(q)
     )
   }, [favorites, search])
+
+  const filteredRecipes = useMemo(() => {
+    const q = recipeSearch.trim().toLowerCase()
+    if (!q) return recipes
+    return recipes.filter((r) => r.name.toLowerCase().includes(q))
+  }, [recipes, recipeSearch])
 
   // Writes one food_entries row (the log line for today). Macros are copied
   // in so later edits to a preset never rewrite history.
@@ -159,6 +186,32 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
     })
   }
 
+  // Logs a recipe as one entry: total ingredient macros / servings the
+  // recipe yields, scaled to however many servings were actually eaten.
+  function handleLogRecipe(recipe) {
+    const loggedServings = Number(recipeServings[recipe.id] ?? 1) || 1
+    const totals = sumMacros(recipe.recipe_ingredients || [])
+    const perServing = scaleMacros(totals, 1 / (Number(recipe.servings) || 1))
+    const macros = scaleMacros(perServing, loggedServings)
+
+    return run(async () => {
+      const { error: entryErr } = await supabase.from('food_entries').insert({
+        household_id: household.id,
+        user_id: user.id,
+        recipe_id: recipe.id,
+        logged_date: date,
+        meal_type: mealType,
+        description: recipe.name,
+        quantity: loggedServings,
+        unit: 'serving',
+        ...macros,
+        source: 'exact',
+      })
+      if (entryErr) throw entryErr
+      await supabase.from('recipes').update({ last_used_at: new Date().toISOString() }).eq('id', recipe.id)
+    })
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -172,6 +225,9 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
         <div className="tabs">
           <button className={tab === 'quick' ? 'active' : ''} onClick={() => setTab('quick')}>
             Quick add
+          </button>
+          <button className={tab === 'recipes' ? 'active' : ''} onClick={() => setTab('recipes')}>
+            Recipes
           </button>
           <button className={tab === 'exact' ? 'active' : ''} onClick={() => setTab('exact')}>
             New food
@@ -224,6 +280,53 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'recipes' && (
+          <div className="tab-panel">
+            {recipes.length > 0 && (
+              <input
+                placeholder="Search your recipes…"
+                value={recipeSearch}
+                onChange={(e) => setRecipeSearch(e.target.value)}
+              />
+            )}
+            {recipesLoading && <p className="muted">Loading…</p>}
+            {!recipesLoading && recipes.length === 0 && (
+              <p className="muted">
+                No recipes yet — build one from your saved foods under Recipes in the nav, then it shows up
+                here.
+              </p>
+            )}
+            {!recipesLoading && recipes.length > 0 && filteredRecipes.length === 0 && (
+              <p className="muted">No match.</p>
+            )}
+            <div className="favorites-list">
+              {filteredRecipes.map((recipe) => {
+                const totals = sumMacros(recipe.recipe_ingredients || [])
+                const perServing = scaleMacros(totals, 1 / (Number(recipe.servings) || 1))
+                return (
+                  <div key={recipe.id} className="favorite-row">
+                    <div className="favorite-info">
+                      <span>{recipe.name}</span>
+                      <span className="muted small">{round(perServing.calories)} cal per serving</span>
+                    </div>
+                    <input
+                      type="number"
+                      step="any"
+                      className="favorite-qty"
+                      value={recipeServings[recipe.id] ?? 1}
+                      onChange={(e) => setRecipeServings({ ...recipeServings, [recipe.id]: e.target.value })}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <button onClick={() => handleLogRecipe(recipe)} disabled={saving}>
+                      Log
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
