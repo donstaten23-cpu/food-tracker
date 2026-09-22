@@ -126,6 +126,29 @@ h3 {
   gap: 20px;
 }
 
+.day-nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.day-nav h1 {
+  margin: 0;
+  min-width: 9em;
+  text-align: center;
+}
+
+.day-nav .icon-button {
+  font-size: 1.6em;
+}
+
+.day-nav-today {
+  position: absolute;
+  right: 16px;
+}
+
 /* --- forms / buttons --- */
 
 label {

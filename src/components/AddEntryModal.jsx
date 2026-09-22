@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { round, todayIso } from '../lib/nutrition'
+import { round } from '../lib/nutrition'
 
 const EMPTY_EXACT = {
   name: '',
@@ -15,7 +15,7 @@ const EMPTY_EXACT = {
   fiber_g: '',
 }
 
-export default function AddEntryModal({ mealType, onClose, onLogged }) {
+export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
   const { user, household } = useAuth()
   const [tab, setTab] = useState('quick')
 
@@ -62,7 +62,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
       household_id: household.id,
       user_id: user.id,
       food_id: foodId,
-      logged_date: todayIso(),
+      logged_date: date,
       meal_type: mealType,
       description: item.name,
       quantity: item.quantity,

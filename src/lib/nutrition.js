@@ -28,10 +28,30 @@ export function netCarbs(totals) {
   return Math.max(0, Number(totals.carbs_g || 0) - Number(totals.fiber_g || 0))
 }
 
-export function todayIso() {
+// Local calendar date, `offsetDays` from today (negative = past, positive =
+// future) — e.g. dateFromOffset(1) is tomorrow, for planning ahead.
+export function dateFromOffset(offsetDays = 0) {
   const d = new Date()
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  d.setDate(d.getDate() + offsetDays)
   return d.toISOString().slice(0, 10)
+}
+
+export function todayIso() {
+  return dateFromOffset(0)
+}
+
+// "Today" / "Tomorrow" / "Yesterday" near the current day, otherwise a short
+// formatted date (e.g. "Thu, Sep 24").
+export function dayLabel(offsetDays, isoDate) {
+  if (offsetDays === 0) return 'Today'
+  if (offsetDays === 1) return 'Tomorrow'
+  if (offsetDays === -1) return 'Yesterday'
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 export function round(n) {

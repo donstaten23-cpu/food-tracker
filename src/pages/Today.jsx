@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { MEAL_TYPES, MEAL_LABELS, sumTotals, round, todayIso } from '../lib/nutrition'
+import { MEAL_TYPES, MEAL_LABELS, sumTotals, round, dateFromOffset, dayLabel } from '../lib/nutrition'
 import MealSection from '../components/MealSection'
 import TargetBar from '../components/TargetBar'
 import AddEntryModal from '../components/AddEntryModal'
@@ -13,8 +13,9 @@ export default function Today() {
   const [householdTotals, setHouseholdTotals] = useState([])
   const [loading, setLoading] = useState(true)
   const [addingMeal, setAddingMeal] = useState(null)
+  const [dayOffset, setDayOffset] = useState(0)
 
-  const date = todayIso()
+  const date = dateFromOffset(dayOffset)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -56,7 +57,20 @@ export default function Today() {
 
   return (
     <div className="page">
-      <h1>Today</h1>
+      <div className="day-nav">
+        <button className="icon-button" onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">
+          ‹
+        </button>
+        <h1>{dayLabel(dayOffset, date)}</h1>
+        <button className="icon-button" onClick={() => setDayOffset((o) => o + 1)} aria-label="Next day">
+          ›
+        </button>
+        {dayOffset !== 0 && (
+          <button className="link-button day-nav-today" onClick={() => setDayOffset(0)}>
+            Today
+          </button>
+        )}
+      </div>
 
       <TargetBar totals={totals} target={target} />
 
@@ -83,6 +97,7 @@ export default function Today() {
       {addingMeal && (
         <AddEntryModal
           mealType={addingMeal}
+          date={date}
           onClose={() => setAddingMeal(null)}
           onLogged={() => {
             setAddingMeal(null)
