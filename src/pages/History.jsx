@@ -145,7 +145,9 @@ export default function History() {
                         [{e.meal_type}] {e.quantity} {e.unit} {e.description}
                       </span>
                       <span className="entry-right">
-                        <span className="muted">{round(e.calories)} cal</span>
+                        <span className="muted">
+                          {round(e.calories)} cal · C {round(e.carbs_g)}g
+                        </span>
                         {day.date === todayIso() ? null : repeated === e.id ? (
                           <span className="muted small">Added to today</span>
                         ) : (
