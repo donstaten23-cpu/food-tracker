@@ -32,6 +32,12 @@ This creates `households`, `household_members`, `foods`, `food_entries`,
 the app uses for the onboarding screen. All new tables — nothing in this
 migration touches the dashboard's existing tables.
 
+If you ran an older copy of `0001` before it had the `last_used_at` column
+(you'll see "Could not find the 'last_used_at' column" when importing or
+using Quick add), also run
+[`0002_foods_last_used_at.sql`](supabase/migrations/0002_foods_last_used_at.sql).
+It's safe to run either way.
+
 ### 2. App environment
 
 ```
