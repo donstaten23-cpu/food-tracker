@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
 import Today from './pages/Today'
+import Foods from './pages/Foods'
 import History from './pages/History'
 import Settings from './pages/Settings'
 import NavBar from './components/NavBar'
@@ -23,6 +24,7 @@ function Gate() {
       <main className="app-main">
         <Routes>
           <Route path="/" element={<Today />} />
+          <Route path="/foods" element={<Foods />} />
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

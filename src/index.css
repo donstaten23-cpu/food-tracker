@@ -509,6 +509,72 @@ button:disabled {
   padding: 8px 14px;
 }
 
+/* --- saved foods --- */
+
+button.secondary {
+  background: var(--bg-card);
+  color: var(--text-1);
+  border: 1px solid var(--border-2);
+}
+
+button.danger {
+  background: var(--bg-card);
+  color: var(--danger);
+  border: 1px solid var(--border-2);
+  margin-left: auto;
+}
+
+.food-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.food-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.food-row.editing {
+  display: block;
+  border-color: var(--accent);
+  padding: 14px;
+}
+
+.food-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.food-row button {
+  flex-shrink: 0;
+  padding: 8px 14px;
+}
+
+.food-edit-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.food-edit-form p {
+  margin: 0 0 10px;
+}
+
+.food-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* --- history --- */
 
 .chart-card {

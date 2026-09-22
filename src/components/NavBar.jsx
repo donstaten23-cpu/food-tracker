@@ -11,6 +11,7 @@ export default function NavBar() {
         <NavLink to="/" end>
           Today
         </NavLink>
+        <NavLink to="/foods">Foods</NavLink>
         <NavLink to="/history">History</NavLink>
         <NavLink to="/settings">Settings</NavLink>
       </nav>

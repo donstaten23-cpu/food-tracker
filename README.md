@@ -38,6 +38,13 @@ using Quick add), also run
 [`0002_foods_last_used_at.sql`](supabase/migrations/0002_foods_last_used_at.sql).
 It's safe to run either way.
 
+Later migrations in `supabase/migrations/` are one-off fixes; run each once
+if it applies to you:
+- `0003_dedupe_foods.sql` — merges duplicate foods created by an old bug
+  (Quick add used to copy a food every time you logged it).
+- `0004_foods_delete_household.sql` — lets either household member delete a
+  saved food from the Foods screen (originally only its creator could).
+
 ### 2. App environment
 
 ```
