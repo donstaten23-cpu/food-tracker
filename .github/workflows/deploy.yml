@@ -24,6 +24,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Without these the build still "succeeds" but ships a blank page (the
+      # app throws at startup when they're missing), so fail loudly instead.
+      - name: Check Supabase secrets are set
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY under repo Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
       - run: npm run build
         env:
           # Set under repo Settings -> Secrets and variables -> Actions.
