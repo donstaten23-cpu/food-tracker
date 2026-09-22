@@ -58,6 +58,7 @@ const COLUMN_ALIASES = {
   protein_g: ['protein', 'proteing'],
   carbs_g: ['carbs', 'carbsg', 'carbohydrates', 'carbohydratesg', 'carbohydrate'],
   fat_g: ['fat', 'fatg', 'fats'],
+  fiber_g: ['fiber', 'fiberg', 'dietaryfiber'],
 }
 
 function normalizeHeader(h) {
@@ -90,7 +91,7 @@ export function foodsFromRows(rows) {
         {
           line: 1,
           message:
-            'The first row must be a header with at least "name" and "calories" columns (optional: brand, quantity, unit, protein_g, carbs_g, fat_g).',
+            'The first row must be a header with at least "name" and "calories" columns (optional: brand, quantity, unit, protein_g, carbs_g, fiber_g, fat_g).',
         },
       ],
     }
@@ -119,9 +120,10 @@ export function foodsFromRows(rows) {
     const protein_g = optional('protein_g', 0)
     const carbs_g = optional('carbs_g', 0)
     const fat_g = optional('fat_g', 0)
+    const fiber_g = optional('fiber_g', 0)
 
-    if ([quantity, protein_g, carbs_g, fat_g].some(Number.isNaN)) {
-      return void errors.push({ line, message: `"${name}": a quantity/protein/carbs/fat value isn't a number.` })
+    if ([quantity, protein_g, carbs_g, fat_g, fiber_g].some(Number.isNaN)) {
+      return void errors.push({ line, message: `"${name}": a quantity/protein/carbs/fiber/fat value isn't a number.` })
     }
     if (quantity <= 0) return void errors.push({ line, message: `"${name}": quantity must be more than 0.` })
 
@@ -134,6 +136,7 @@ export function foodsFromRows(rows) {
       protein_g,
       carbs_g,
       fat_g,
+      fiber_g,
     })
   })
 

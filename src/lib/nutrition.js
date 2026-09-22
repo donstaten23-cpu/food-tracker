@@ -16,9 +16,16 @@ export function sumTotals(entries) {
       protein_g: acc.protein_g + Number(e.protein_g || 0),
       carbs_g: acc.carbs_g + Number(e.carbs_g || 0),
       fat_g: acc.fat_g + Number(e.fat_g || 0),
+      fiber_g: acc.fiber_g + Number(e.fiber_g || 0),
     }),
-    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0 }
   )
+}
+
+// Net carbs = total carbs minus fiber, the number apps like Cronometer show
+// against the "carb" target since fiber isn't metabolized the same way.
+export function netCarbs(totals) {
+  return Math.max(0, Number(totals.carbs_g || 0) - Number(totals.fiber_g || 0))
 }
 
 export function todayIso() {

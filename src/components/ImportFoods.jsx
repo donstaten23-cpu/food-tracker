@@ -93,7 +93,7 @@ export default function ImportFoods() {
       </p>
       <p className="muted small">
         Columns: <strong>name</strong> and <strong>calories</strong> are required; optional:
-        brand, quantity, unit, protein_g, carbs_g, fat_g.{' '}
+        brand, quantity, unit, protein_g, carbs_g, fiber_g, fat_g.{' '}
         <a href={`${import.meta.env.BASE_URL}food-import-template.csv`} download>
           Download a template
         </a>{' '}

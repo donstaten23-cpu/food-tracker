@@ -14,6 +14,7 @@ const toForm = (food) => ({
   protein_g: food.protein_g,
   carbs_g: food.carbs_g,
   fat_g: food.fat_g,
+  fiber_g: food.fiber_g,
 })
 
 export default function FoodRow({ food, allFoods, onChanged }) {
@@ -43,6 +44,7 @@ export default function FoodRow({ food, allFoods, onChanged }) {
       protein_g: Number(form.protein_g || 0),
       carbs_g: Number(form.carbs_g || 0),
       fat_g: Number(form.fat_g || 0),
+      fiber_g: Number(form.fiber_g || 0),
     }
     if (Object.values(nums).some((n) => Number.isNaN(n) || n < 0)) {
       return setError('Quantity, calories and macros must be numbers, zero or more.')
@@ -102,7 +104,7 @@ export default function FoodRow({ food, allFoods, onChanged }) {
           </span>
           <span className="muted small">
             {round(food.calories)} cal per {food.serving_qty} {food.serving_unit} · P {round(food.protein_g)}g · C{' '}
-            {round(food.carbs_g)}g · F {round(food.fat_g)}g
+            {round(food.carbs_g)}g (fiber {round(food.fiber_g)}g) · F {round(food.fat_g)}g
           </span>
         </div>
         <button type="button" className="secondary food-edit-btn" onClick={startEdit}>
@@ -148,6 +150,12 @@ export default function FoodRow({ food, allFoods, onChanged }) {
             Carbs (g)
             <input type="number" step="any" value={form.carbs_g} onChange={set('carbs_g')} />
           </label>
+          <label>
+            Fiber (g)
+            <input type="number" step="any" value={form.fiber_g} onChange={set('fiber_g')} />
+          </label>
+        </div>
+        <div className="field-row">
           <label>
             Fat (g)
             <input type="number" step="any" value={form.fat_g} onChange={set('fat_g')} />

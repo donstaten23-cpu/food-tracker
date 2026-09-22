@@ -1,53 +1,18 @@
-import { round } from '../lib/nutrition'
+import { round, netCarbs } from '../lib/nutrition'
 
-const RADIUS = 84
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS
-
-function CalorieRing({ eaten, target }) {
-  const progress = target > 0 ? Math.min(1, eaten / target) : 0
-  const remaining = target - eaten
-  const over = remaining < 0
-
-  return (
-    <div className="calorie-ring">
-      <svg
-        viewBox="0 0 200 200"
-        role="img"
-        aria-label={`${round(Math.abs(remaining))} calories ${over ? 'over' : 'remaining'}`}
-      >
-        <circle className="ring-track" cx="100" cy="100" r={RADIUS} />
-        <circle
-          className="ring-progress"
-          cx="100"
-          cy="100"
-          r={RADIUS}
-          strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
-          transform="rotate(-90 100 100)"
-        />
-      </svg>
-      <div className="ring-center">
-        <span className="ring-value">{round(Math.abs(remaining))}</span>
-        <span className="ring-label">{over ? 'Over' : 'Remaining'}</span>
-        <span className="ring-sub">
-          {round(eaten)} / {round(target)} cal
-        </span>
-      </div>
-    </div>
-  )
-}
-
-function MacroBar({ label, value, target }) {
+function StatBar({ className, label, value, target, unit }) {
   const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0
   return (
-    <div className="macro">
-      <span className="macro-label">{label}</span>
-      <div className="macro-track">
-        <div className="macro-fill" style={{ width: `${pct}%` }} />
+    <div className={`stat-bar ${className}`}>
+      <div className="stat-bar-row">
+        <span className="stat-bar-label">
+          {label} - {round(value)} / {round(target)} {unit}
+        </span>
+        <span className="stat-bar-pct">{Math.round(pct)}%</span>
       </div>
-      <span className="macro-value">
-        {round(value)} / {round(target)}g
-      </span>
+      <div className="stat-bar-track">
+        <div className="stat-bar-fill" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   )
 }
@@ -55,13 +20,17 @@ function MacroBar({ label, value, target }) {
 export default function TargetBar({ totals, target }) {
   if (!target) return null
   return (
-    <div className="calorie-card">
-      <CalorieRing eaten={totals.calories} target={target.calories} />
-      <div className="macro-row">
-        <MacroBar label="Protein" value={totals.protein_g} target={target.protein_g} />
-        <MacroBar label="Carbs" value={totals.carbs_g} target={target.carbs_g} />
-        <MacroBar label="Fat" value={totals.fat_g} target={target.fat_g} />
-      </div>
+    <div className="target-card">
+      <StatBar className="stat-energy" label="Energy" value={totals.calories} target={target.calories} unit="kcal" />
+      <StatBar className="stat-protein" label="Protein" value={totals.protein_g} target={target.protein_g} unit="g" />
+      <StatBar
+        className="stat-carbs"
+        label="Net Carbs"
+        value={netCarbs(totals)}
+        target={target.carbs_g}
+        unit="g"
+      />
+      <StatBar className="stat-fat" label="Fat" value={totals.fat_g} target={target.fat_g} unit="g" />
     </div>
   )
 }

@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { round } from '../lib/nutrition'
+import { round, netCarbs } from '../lib/nutrition'
 
 const RANGE_DAYS = 14
 
@@ -51,7 +51,7 @@ export default function History() {
     const map = new Map()
     for (let i = RANGE_DAYS - 1; i >= 0; i--) {
       const date = daysAgoIso(i)
-      map.set(date, { date, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, entries: [] })
+      map.set(date, { date, calories: 0, protein_g: 0, carbs_g: 0, fiber_g: 0, fat_g: 0, entries: [] })
     }
     for (const row of rows) {
       const day = map.get(row.logged_date)
@@ -59,6 +59,7 @@ export default function History() {
       day.calories += Number(row.calories || 0)
       day.protein_g += Number(row.protein_g || 0)
       day.carbs_g += Number(row.carbs_g || 0)
+      day.fiber_g += Number(row.fiber_g || 0)
       day.fat_g += Number(row.fat_g || 0)
       day.entries.push(row)
     }
@@ -103,7 +104,7 @@ export default function History() {
               <button className="day-row" onClick={() => setExpanded(expanded === day.date ? null : day.date)}>
                 <span>{day.date}</span>
                 <span className="muted">
-                  {round(day.calories)} cal · P {round(day.protein_g)}g · C {round(day.carbs_g)}g · F{' '}
+                  {round(day.calories)} cal · P {round(day.protein_g)}g · Net C {round(netCarbs(day))}g · F{' '}
                   {round(day.fat_g)}g
                 </span>
               </button>

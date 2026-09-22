@@ -65,7 +65,7 @@ export default function Settings() {
             />
           </label>
           <label>
-            Carbs (g)
+            Net Carbs (g)
             <input
               type="number"
               value={form.carbs_g}
@@ -81,6 +81,9 @@ export default function Settings() {
           </button>
           {saved && <span className="muted small">Saved.</span>}
         </form>
+        <p className="muted small">
+          "Net Carbs" on Today is total carbs minus fiber, logged per food under "Fiber (g)".
+        </p>
       </section>
 
       <ImportFoods />

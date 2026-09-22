@@ -3,7 +3,17 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { round, todayIso } from '../lib/nutrition'
 
-const EMPTY_EXACT = { name: '', brand: '', quantity: 1, unit: 'serving', calories: '', protein_g: '', carbs_g: '', fat_g: '' }
+const EMPTY_EXACT = {
+  name: '',
+  brand: '',
+  quantity: 1,
+  unit: 'serving',
+  calories: '',
+  protein_g: '',
+  carbs_g: '',
+  fat_g: '',
+  fiber_g: '',
+}
 
 export default function AddEntryModal({ mealType, onClose, onLogged }) {
   const { user, household } = useAuth()
@@ -61,6 +71,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
       protein_g: item.protein_g,
       carbs_g: item.carbs_g,
       fat_g: item.fat_g,
+      fiber_g: item.fiber_g,
       source: 'exact',
     })
     if (entryErr) throw entryErr
@@ -98,6 +109,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
           protein_g: item.protein_g,
           carbs_g: item.carbs_g,
           fat_g: item.fat_g,
+          fiber_g: item.fiber_g,
           source: 'exact',
         })
         .select()
@@ -117,6 +129,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
       protein_g: Number(exact.protein_g) || 0,
       carbs_g: Number(exact.carbs_g) || 0,
       fat_g: Number(exact.fat_g) || 0,
+      fiber_g: Number(exact.fiber_g) || 0,
     })
   }
 
@@ -136,6 +149,7 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
           protein_g: food.protein_g * ratio,
           carbs_g: food.carbs_g * ratio,
           fat_g: food.fat_g * ratio,
+          fiber_g: (food.fiber_g || 0) * ratio,
         },
         food.id
       )
@@ -255,6 +269,12 @@ export default function AddEntryModal({ mealType, onClose, onLogged }) {
                 Carbs (g)
                 <input type="number" step="any" value={exact.carbs_g} onChange={(e) => setExact({ ...exact, carbs_g: e.target.value })} />
               </label>
+              <label>
+                Fiber (g)
+                <input type="number" step="any" value={exact.fiber_g} onChange={(e) => setExact({ ...exact, fiber_g: e.target.value })} />
+              </label>
+            </div>
+            <div className="field-row">
               <label>
                 Fat (g)
                 <input type="number" step="any" value={exact.fat_g} onChange={(e) => setExact({ ...exact, fat_g: e.target.value })} />
