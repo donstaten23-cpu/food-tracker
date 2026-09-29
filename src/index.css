@@ -160,6 +160,26 @@ label {
   margin-bottom: 10px;
 }
 
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-1);
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+details.muted.small {
+  margin: -4px 0 10px;
+}
+
+details.muted.small summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+}
+
 input,
 textarea {
   background: var(--bg-input);
