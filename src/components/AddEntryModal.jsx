@@ -21,6 +21,7 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
 
   // --- new food tab ---
   const [exact, setExact] = useState(EMPTY_EXACT)
+  const [saveAsPreset, setSaveAsPreset] = useState(true)
 
   // --- quick add tab ---
   const [favorites, setFavorites] = useState([])
@@ -146,9 +147,15 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
     })
   }
 
+  // Logs the numbers once without touching the catalog — for a one-off meal
+  // that isn't worth cluttering Quick add with.
+  function logOnce(item) {
+    return run(() => logEntry(item, null))
+  }
+
   function handleSaveExact(e) {
     e.preventDefault()
-    return saveNewFood({
+    const item = {
       name: exact.name.trim(),
       quantity: Number(exact.quantity) || 1,
       unit: exact.unit,
@@ -157,7 +164,8 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
       carbs_g: Number(exact.carbs_g) || 0,
       fat_g: Number(exact.fat_g) || 0,
       fiber_g: Number(exact.fiber_g) || 0,
-    })
+    }
+    return saveAsPreset ? saveNewFood(item) : logOnce(item)
   }
 
   // Logs a preset food, scaling its stored macros if the user changed the
@@ -333,10 +341,23 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
 
         {tab === 'exact' && (
           <form className="tab-panel" onSubmit={handleSaveExact}>
-            <p className="muted small">
-              Enter the numbers once (from a label, a recipe, or wherever you look it up) — it's
-              saved to Quick add for every time after.
-            </p>
+            <p className="muted small">Enter the numbers once (from a label, a recipe, or wherever you look it up).</p>
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={saveAsPreset}
+                onChange={(e) => setSaveAsPreset(e.target.checked)}
+              />
+              Save as a reusable food (shows up in Quick add)
+            </label>
+            <details className="muted small">
+              <summary>Worth saving?</summary>
+              Save it if: it's a brand-name product, a recipe/combo you make a specific way
+              regularly, or a restaurant order you'd get again roughly the same way. Skip saving
+              (just log this once) if: it's a one-off improvised meal, a close variant of an
+              existing preset, or an unusual one-time portion. The test: will you make/order this
+              again, roughly this way, in the next few months?
+            </details>
             <label>
               Name
               <input value={exact.name} onChange={(e) => setExact({ ...exact, name: e.target.value })} required />
@@ -384,7 +405,7 @@ export default function AddEntryModal({ mealType, date, onClose, onLogged }) {
               </label>
             </div>
             <button type="submit" disabled={saving}>
-              {saving ? 'Saving…' : `Log to ${mealType}`}
+              {saving ? 'Saving…' : saveAsPreset ? `Save & log to ${mealType}` : `Log to ${mealType} (one-off)`}
             </button>
           </form>
         )}
