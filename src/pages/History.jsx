@@ -94,12 +94,24 @@ export default function History() {
     return Array.from(map.values())
   }, [rows])
 
+  const carbGoalSummary = useMemo(() => {
+    if (!target?.carbs_g) return null
+    const loggedDays = byDay.filter((d) => d.entries.length > 0)
+    const hitDays = loggedDays.filter((d) => netCarbs(d) <= target.carbs_g)
+    return { hit: hitDays.length, total: loggedDays.length }
+  }, [byDay, target])
+
   if (loading) return <p className="muted">Loading…</p>
 
   return (
     <div className="page">
       <h1>History</h1>
-      <p className="muted">Last {RANGE_DAYS} days</p>
+      <p className="muted">
+        Last {RANGE_DAYS} days
+        {carbGoalSummary && carbGoalSummary.total > 0 && (
+          <> · Hit carb goal {carbGoalSummary.hit}/{carbGoalSummary.total} days</>
+        )}
+      </p>
 
       <div className="chart-card">
         <ResponsiveContainer width="100%" height={220}>
@@ -130,7 +142,21 @@ export default function History() {
           .map((day) => (
             <li key={day.date}>
               <button className="day-row" onClick={() => setExpanded(expanded === day.date ? null : day.date)}>
-                <span>{day.date}</span>
+                <span className="day-row-left">
+                  {target?.carbs_g && day.entries.length > 0 && (
+                    <span
+                      className={`carb-goal-badge ${netCarbs(day) <= target.carbs_g ? 'hit' : 'miss'}`}
+                      title={
+                        netCarbs(day) <= target.carbs_g
+                          ? 'Hit carb goal'
+                          : 'Over carb goal'
+                      }
+                    >
+                      {netCarbs(day) <= target.carbs_g ? '✓' : '✕'}
+                    </span>
+                  )}
+                  {day.date}
+                </span>
                 <span className="muted">
                   {round(day.calories)} cal · P {round(day.protein_g)}g · Net C {round(netCarbs(day))}g · F{' '}
                   {round(day.fat_g)}g

@@ -622,6 +622,34 @@ li.day-row {
   border-radius: 10px;
 }
 
+.day-row-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.carb-goal-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+}
+
+.carb-goal-badge.hit {
+  background: color-mix(in srgb, var(--stat-protein) 18%, transparent);
+  color: var(--stat-protein);
+}
+
+.carb-goal-badge.miss {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
 /* --- settings --- */
 
 .settings-section {
