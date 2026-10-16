@@ -1,7 +1,7 @@
 import { round, netCarbs } from '../lib/nutrition'
 
 function StatBar({ className, label, value, target, unit }) {
-  const pct = target > 0 ? Math.min(100, (value / target) * 100) : 0
+  const pct = target > 0 ? (value / target) * 100 : 0
   return (
     <div className={`stat-bar ${className}`}>
       <div className="stat-bar-row">
@@ -11,7 +11,7 @@ function StatBar({ className, label, value, target, unit }) {
         <span className="stat-bar-pct">{Math.round(pct)}%</span>
       </div>
       <div className="stat-bar-track">
-        <div className="stat-bar-fill" style={{ width: `${pct}%` }} />
+        <div className="stat-bar-fill" style={{ width: `${Math.min(100, pct)}%` }} />
       </div>
     </div>
   )

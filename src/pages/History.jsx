@@ -11,7 +11,9 @@ import {
 } from 'recharts'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { round, netCarbs, todayIso } from '../lib/nutrition'
+import { round, netCarbs, todayIso, sumMacros, scaleMacros } from '../lib/nutrition'
+import EntryRow from '../components/EntryRow'
+import TargetBar from '../components/TargetBar'
 
 const RANGE_DAYS = 14
 
@@ -101,6 +103,14 @@ export default function History() {
     return { hit: hitDays.length, total: loggedDays.length }
   }, [byDay, target])
 
+  // Average per logged day (days with nothing logged don't drag it down),
+  // shown against the same daily goal as Today.
+  const dailyAverage = useMemo(() => {
+    const loggedDays = byDay.filter((d) => d.entries.length > 0).length
+    if (loggedDays === 0) return null
+    return { totals: scaleMacros(sumMacros(rows), 1 / loggedDays), days: loggedDays }
+  }, [byDay, rows])
+
   if (loading) return <p className="muted">Loading…</p>
 
   return (
@@ -112,6 +122,15 @@ export default function History() {
           <> · Hit carb goal {carbGoalSummary.hit}/{carbGoalSummary.total} days</>
         )}
       </p>
+
+      {dailyAverage && target && (
+        <div>
+          <p className="muted small avg-heading">
+            Daily average ({dailyAverage.days} logged day{dailyAverage.days === 1 ? '' : 's'}) vs. your goal
+          </p>
+          <TargetBar totals={dailyAverage.totals} target={target} />
+        </div>
+      )}
 
       <div className="chart-card">
         <ResponsiveContainer width="100%" height={220}>
@@ -166,27 +185,14 @@ export default function History() {
                 <ul className="entry-list nested">
                   {day.entries.length === 0 && <li className="muted small">Nothing logged.</li>}
                   {day.entries.map((e) => (
-                    <li key={e.id}>
-                      <span>
-                        [{e.meal_type}] {e.quantity} {e.unit} {e.description}
-                      </span>
-                      <span className="entry-right">
-                        <span className="muted">
-                          {round(e.calories)} cal · C {round(e.carbs_g)}g
-                        </span>
-                        {day.date === todayIso() ? null : repeated === e.id ? (
-                          <span className="muted small">Added to today</span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="secondary small"
-                            onClick={() => repeatEntry(e)}
-                          >
-                            Repeat
-                          </button>
-                        )}
-                      </span>
-                    </li>
+                    <EntryRow
+                      key={e.id}
+                      entry={e}
+                      onChanged={load}
+                      onRepeat={day.date === todayIso() ? null : repeatEntry}
+                      repeated={repeated === e.id}
+                      showMealType
+                    />
                   ))}
                 </ul>
               )}
