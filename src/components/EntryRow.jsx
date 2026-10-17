@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { round } from '../lib/nutrition'
 
-// One logged entry. Tapping the description lets you fix the amount after
+// One logged entry. The edit (pencil) button lets you fix the amount after
 // the fact — every macro scales with it, same ratio it was logged at.
 export default function EntryRow({ entry, onChanged, onRepeat, repeated, showMealType }) {
   const [editing, setEditing] = useState(false)
@@ -75,10 +75,10 @@ export default function EntryRow({ entry, onChanged, onRepeat, repeated, showMea
 
   return (
     <li>
-      <button type="button" className="entry-desc" onClick={startEdit}>
+      <span>
         {showMealType && `[${entry.meal_type}] `}
         {entry.quantity} {entry.unit} {entry.description}
-      </button>
+      </span>
       <span className="entry-right">
         <span className="muted">
           {round(entry.calories)} cal · C {round(entry.carbs_g)}g
@@ -91,6 +91,9 @@ export default function EntryRow({ entry, onChanged, onRepeat, repeated, showMea
               Repeat
             </button>
           ))}
+        <button type="button" className="icon-button small" onClick={startEdit} aria-label="Edit amount">
+          ✎
+        </button>
         <button type="button" className="icon-button small" onClick={handleDelete} aria-label="Delete">
           ×
         </button>

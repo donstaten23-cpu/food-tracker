@@ -398,21 +398,6 @@ button.small {
   margin-top: 8px;
 }
 
-.entry-desc {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.entry-desc:hover {
-  text-decoration: underline;
-}
-
 .entry-editing {
   flex-direction: column !important;
   align-items: stretch !important;
